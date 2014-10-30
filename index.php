@@ -6,11 +6,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Aura\Router\RouterFactory;
 use Pimple\Container;
+use Zend\Log\Writer\Stream;
+use Zend\Log\Logger;
 
 $c = new Container();
 
 // configuration
 $c['connection_string'] = 'sqlite:'.__DIR__.'/data/database.sqlite';
+$c['log_path'] = __DIR__.'/data/web.log';
 
 // Service setup
 $c['connection'] = function(Container $c) {
@@ -34,6 +37,15 @@ $c['router'] = function() {
 
     return $router;
 };
+$c['logger_writer'] = function(Container $c) {
+    return new Stream($c['log_path']);
+};
+$c['logger'] = function(Container $c) {
+    $logger = new Logger();
+    $logger->addWriter($c['logger_writer']);
+
+    return $logger;
+};
 
 // run the framework!
 $route = $c['router']->match(
@@ -48,6 +60,13 @@ if ($route) {
 
 // get the "controller" out, or default to error404_controller
 $controller = $c['request']->attributes->get('controller', 'error404_controller');
+
+if ($controller == 'error404_controller') {
+    $msg = sprintf('Controller not found for "%s"', $c['request']->getPathInfo());
+    $c['logger']->err($msg);
+} else {
+    $c['logger']->info(sprintf('Found controller "%s"', $controller));
+}
 
 // execute the controller and get the response
 $response = call_user_func_array($controller, array($c['request'], $c));
