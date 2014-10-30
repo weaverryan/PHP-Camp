@@ -1,41 +1,56 @@
 <?php
 require __DIR__.'/bootstrap.php';
 
-try {
-    $dbPath = __DIR__.'/data/database.sqlite';
-    $dbh = new PDO('sqlite:'.$dbPath);
-} catch(PDOException $e) {
-    die('Panic! '.$e->getMessage());
-}
-
 // create a request object to help us
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Aura\Router\RouterFactory;
+use Pimple\Container;
 
-$request = Request::createFromGlobals();
-$uri = $request->getPathInfo();
+$c = new Container();
 
-$routerFactory = new RouterFactory();
-$router = $routerFactory->newInstance();
+// configuration
+$c['connection_string'] = 'sqlite:'.__DIR__.'/data/database.sqlite';
 
-// create a router, build the routes, and then execute it
-$router->add('attendees_list', '/attendees')
-    ->addValues(['controller' => 'attendees_controller']);
-$router->add('homepage', '{/name}')
-    ->addValues(['controller' => 'homepage_controller']);
-$route = $router->match($uri, $request->server->all());
+// Service setup
+$c['connection'] = function(Container $c) {
+    return new PDO($c['connection_string']);
+};
+
+$c['request'] = function() {
+    return Request::createFromGlobals();
+};
+
+$c['router'] = function() {
+    $routerFactory = new RouterFactory();
+
+    $router = $routerFactory->newInstance();
+
+    // create a router, build the routes, and then execute it
+    $router->add('attendees_list', '/attendees')
+        ->addValues(['controller' => 'attendees_controller']);
+    $router->add('homepage', '{/name}')
+        ->addValues(['controller' => 'homepage_controller']);
+
+    return $router;
+};
+
+// run the framework!
+$route = $c['router']->match(
+    $c['request']->getPathInfo(),
+    $c['request']->server->all()
+);
 
 // merge the matched attributes back into Symfony's request
 if ($route) {
-    $request->attributes->add($route->params);
+    $c['request']->attributes->add($route->params);
 }
 
 // get the "controller" out, or default to error404_controller
-$controller = $request->attributes->get('controller', 'error404_controller');
+$controller = $c['request']->attributes->get('controller', 'error404_controller');
 
 // execute the controller and get the response
-$response = call_user_func_array($controller, array($request));
+$response = call_user_func_array($controller, array($c['request'], $c));
 if (!$response instanceof Response) {
     throw new Exception(sprintf('Your controller "%s" did not return a response!!', $controller));
 }
@@ -56,8 +71,8 @@ function homepage_controller(Request $request) {
     return new Response($content);
 }
 
-function attendees_controller(Request $request) {
-    global $dbh;
+function attendees_controller(Request $request, Container $c) {
+    $dbh = $c['connection'];
 
     $sql = 'SELECT * FROM php_camp';
     $content = '<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />';

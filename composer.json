@@ -1,6 +1,7 @@
 {
     "require": {
         "symfony/http-foundation": "~2.5",
-        "aura/router": "~2.1"
+        "aura/router": "~2.1",
+        "pimple/pimple": "~3.0"
     }
 }
