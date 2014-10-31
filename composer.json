@@ -2,6 +2,7 @@
     "require": {
         "symfony/http-foundation": "~2.5",
         "aura/router": "~2.1",
+        "aura/dispatcher": "~2.0",
         "pimple/pimple": "~3.0",
         "zendframework/zend-log": "~2.3"
     }
