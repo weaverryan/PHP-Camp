@@ -8,7 +8,9 @@ use Pimple\Container;
  * Define our controllers
  */
 
-function homepage_controller(Request $request) {
+$dispatcher = $c['dispatcher'];
+
+$dispatcher->setObject('homepage_controller', function (Request $request) {
 
     $content = '<h1>PHP Camp!</h1>';
     $content .= '<a href="/attendees">See the attendees</a>';
@@ -17,9 +19,9 @@ function homepage_controller(Request $request) {
     }
 
     return new Response($content);
-}
+});
 
-function attendees_controller(Request $request, Container $c) {
+$dispatcher->setObject('attendees_controller', function (Request $request, Container $c) {
     $dbh = $c['connection'];
 
     $sql = 'SELECT * FROM php_camp';
@@ -36,9 +38,9 @@ function attendees_controller(Request $request, Container $c) {
     $content .= '</table>';
 
     return new Response($content);
-}
+});
 
-function error404_controller(Request $request) {
+$dispatcher->setObject('error404_controller', function (Request $request) {
     $content = '<h1>404 Page not Found</h1>';
     $content .= '<p>Find a boy (or girl) scout - they can fix this!</p>';
 
@@ -46,4 +48,4 @@ function error404_controller(Request $request) {
     $response->setStatusCode(404);
 
     return $response;
-}
+});

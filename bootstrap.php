@@ -5,6 +5,7 @@ require __DIR__.'/vendor/autoload.php';
 use Pimple\Container;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
+use Aura\Dispatcher\Dispatcher;
 use Aura\Router\RouterFactory;
 use Zend\Log\Writer\Stream;
 use Zend\Log\Logger;
@@ -19,24 +20,22 @@ function _run_app(Container $c) {
         $c['request']->getPathInfo(),
         $c['request']->server->all()
     );
-
+    $params = array('controller' => 'error404_controller');
     // merge the matched attributes back into Symfony's request
     if ($route) {
-        $c['request']->attributes->add($route->params);
-    }
-
-    // get the "controller" out, or default to error404_controller
-    $controller = $c['request']->attributes->get('controller', 'error404_controller');
-
-    if ($controller == 'error404_controller') {
+        $params = $route->params;
+        $c['request']->attributes->add($params);
+        $c['logger']->info(sprintf('Found controller "%s"', $controller));
+    } else {
         $msg = sprintf('Controller not found for "%s"', $c['request']->getPathInfo());
         $c['logger']->err($msg);
-    } else {
-        $c['logger']->info(sprintf('Found controller "%s"', $controller));
     }
 
+    $params['request'] = $c['request'];
+    $params['c'] = $c;
+    $dispatcher = $c['dispatcher'];
     // execute the controller and get the response
-    $response = call_user_func_array($controller, array($c['request'], $c));
+    $response = $dispatcher->__invoke($params);
     if (!$response instanceof Response) {
         throw new Exception(sprintf('Your controller "%s" did not return a response!!', $controller));
     }
@@ -57,6 +56,12 @@ $c['log_path'] = __DIR__.'/data/web.log';
 // Service setup
 $c['connection'] = function(Container $c) {
     return new PDO($c['connection_string']);
+};
+
+$c['dispatcher'] = function() {
+    $dispatcher = new Dispatcher;
+    $dispatcher->setObjectParam('controller');
+    return $dispatcher;
 };
 
 $c['request'] = function() {
