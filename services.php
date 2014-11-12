@@ -32,4 +32,12 @@ $c['logger'] = function (Container $c) {
     return $logger;
 };
 
+$c['twig'] = function() {
+    $loader = new \Twig_Loader_Filesystem(array(
+        __DIR__.'/views'
+    ));
+
+    return new \Twig_Environment($loader);
+};
+
 return $c;

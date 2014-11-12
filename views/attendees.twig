@@ -1,0 +1,13 @@
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+
+<h1>PHP Camp Attendees</h1>
+<table class="table" style="width: 300px;">
+    {% for camper in campers %}
+    <tr>
+        <td style="font-size: 24px;">
+            {{ camper.attendee }}
+        </td>
+        <td><img src="{{ camper.avatar_url }}" height="120" /></td>
+    </tr>
+    {% endfor %}
+</table>

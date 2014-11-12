@@ -3,6 +3,7 @@
         "symfony/http-foundation": "~2.5",
         "aura/router": "~2.1",
         "pimple/pimple": "~3.0",
-        "zendframework/zend-log": "~2.3"
+        "zendframework/zend-log": "~2.3",
+        "twig/twig": "~1.0"
     }
 }
